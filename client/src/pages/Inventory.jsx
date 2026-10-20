@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useAuth } from '../AuthContext'
 
@@ -12,12 +12,14 @@ const RARITY_LINE = {
 
 export default function Inventory() {
   const { user, setUser, isAdmin } = useAuth()
+  const navigate = useNavigate()
   const [items, setItems] = useState([])
   const [tab, setTab] = useState('owned') // owned | sold
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [selling, setSelling] = useState(null) // aynan sotilyotgan item id
+  const [listing, setListing] = useState(null) // aynan bozonga qoylani
 
   const load = useCallback(async () => {
     try {
@@ -33,6 +35,46 @@ export default function Inventory() {
   useEffect(() => {
     if (user) load()
   }, [user, load])
+
+  // Bozorga qo'yish modali
+  const openListModal = (item) => {
+    setError('')
+    setNotice('')
+    setListing({ item, price: String(item.skin?.skinPrice || 0) })
+  }
+
+  const closeListModal = () => {
+    setListing(null)
+  }
+
+  const confirmList = async (e) => {
+    e.preventDefault()
+    if (!listing?.item) return
+    try {
+      const p = parseFloat(listing.price)
+      if (!Number.isFinite(p) || p <= 0) {
+        setError('Narx musbat raqam bo\'lishi kerak')
+        setTimeout(() => setError(''), 4000)
+        return
+      }
+      if (p > 1000000) {
+        setError('Narx 1 000 000 dan ortiq bo\'lishi mumkin emas')
+        setTimeout(() => setError(''), 4000)
+        return
+      }
+      setListing({ ...listing, submitting: true })
+      await api.createListing({ itemId: listing.item._id, price: p })
+      setNotice(`Bozorga qo'yildi: ${listing.item.skin?.skinName || 'Skin'} — $${p.toFixed(2)}`)
+      setListing(null)
+      setTimeout(() => {
+        navigate('/market')
+      }, 600)
+    } catch (e) {
+      setError(e.message)
+      setTimeout(() => setError(''), 4000)
+      setListing(prev => prev ? { ...prev, submitting: false } : null)
+    }
+  }
 
   // Ulangan bo'lmasa kirish taklifi
   if (!user) {
@@ -55,7 +97,7 @@ export default function Inventory() {
       const data = await api.sellItem(item._id)
       // Navbar balansini yangilash
       setUser({ ...user, wallet: data.wallet })
-      setNotice(`✅ "${item.skin.skinName}" $${Number(item.skin.skinPrice).toFixed(2)} ga sotildi`)
+      setNotice(`✅ "${item.skin?.skinName || 'Skin'}" $${Number(item.skin?.skinPrice || 0).toFixed(2)} ga sotildi`)
       load() // royxatni yangilash (owned dan yo'qoladi, sold ga o'tadi)
       setTimeout(() => setNotice(''), 3000)
     } catch (e) {
@@ -122,9 +164,9 @@ export default function Inventory() {
               onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement.classList.add('noimg') }}
             />
             <div className="inv-info">
-              <h3>{item.skin?.skinName}</h3>
+              <h3>{item.skin?.skinName || 'Noma\'lum skin'}</h3>
               <div style={{ color: RARITY_LINE[item.skin?.skinRarity], fontWeight: 700, fontSize: 12, marginTop: 4 }}>
-                {item.skin?.skinRarity}
+                {item.skin?.skinRarity || 'Common'}
               </div>
               <div className="muted small" style={{ marginTop: 6 }}>
                 📦 {item.sourceCase?.caseName || '—'} · {new Date(item.obtainedAt).toLocaleDateString()}
@@ -133,9 +175,16 @@ export default function Inventory() {
             <div className="inv-bottom">
               <span className="price">${Number(item.skin?.skinPrice || 0).toFixed(2)}</span>
               {item.status === 'owned' ? (
-                <button className="btn small green" onClick={() => sell(item)} disabled={selling === item._id}>
-                  {selling === item._id ? 'Sotilyapti...' : '💰 Sotish'}
-                </button>
+                <span className="inv-actions">
+                  <button className="btn small green" onClick={() => sell(item)} disabled={selling === item._id}>
+                    {selling === item._id ? 'Sotilyapti...' : '💰 Sotish'}
+                  </button>
+                  <button className="btn small blue" onClick={() => openListModal(item)}>
+                    🏪 Bozorga qo‘yish
+                  </button>
+                </span>
+              ) : item.status === 'listed' ? (
+                <span className="badge listed">bozorda 🏪</span>
               ) : (
                 <span className="badge sold">sotilgan</span>
               )}
@@ -143,6 +192,52 @@ export default function Inventory() {
           </div>
         ))}
       </div>
+
+      {listing && (
+        <div className="modal-overlay" onClick={closeListModal}>
+          <div className="roll-modal" style={{ maxWidth: 420, textAlign: 'left' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h2 style={{ fontSize: 22 }}>Bozorga qo‘yish</h2>
+              <button className="btn small ghost" onClick={closeListModal}>Yopish</button>
+            </div>
+            <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 16 }}>
+              <img
+                src={listing.item.skin?.imageUrl}
+                alt={listing.item.skin?.skinName}
+                style={{ width: 92, height: 64, objectFit: 'contain', filter: 'drop-shadow(0 6px 12px rgba(0,0,0,.5))' }}
+                onError={(e) => { e.currentTarget.style.display = 'none' }}
+              />
+              <div>
+                <div style={{ fontWeight: 700 }}>{listing.item.skin?.skinName || 'Skin'}</div>
+                <div style={{ color: RARITY_LINE[listing.item.skin?.skinRarity], fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px' }}>
+                  {listing.item.skin?.skinRarity || 'Common'}
+                </div>
+                <div className="muted small">Tavsiya narxi: ${Number(listing.item.skin?.skinPrice || 0).toFixed(2)}</div>
+              </div>
+            </div>
+            <form onSubmit={confirmList} className="form" style={{ maxWidth: '100%' }}>
+              <label>
+                Narx ($)
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  max="1000000"
+                  value={listing.price}
+                  onChange={(e) => setListing({ ...listing, price: e.target.value })}
+                  autoFocus
+                />
+              </label>
+              <div className="row-btns">
+                <button className="btn" type="submit" disabled={listing.submitting}>
+                  {listing.submitting ? 'Qo‘yilyapti...' : 'Bozorga qo‘yish'}
+                </button>
+                <button className="btn ghost" type="button" onClick={closeListModal}>Bekor qilish</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

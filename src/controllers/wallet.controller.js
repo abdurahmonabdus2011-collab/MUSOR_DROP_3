@@ -38,9 +38,9 @@ exports.getWallet = async (req, res) => {
 // POST /api/wallet/deposit — pul qo'shish { amount: Number }
 exports.deposit = async (req, res) => {
     try {
-        const { amount } = req.body
+        const amount = Number(req.body.amount)
 
-        if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0) {
+        if (!Number.isFinite(amount) || amount <= 0) {
             return res.status(400).json({ message: 'amount musbat raqam bolishi kerak' })
         }
         if (amount > 100000) {

@@ -63,9 +63,9 @@ export default function Cases() {
   const selectCase = (c) => {
     setOpenError('')
     setRollingCase(c)
-    const allSkins = c.skins.map((s) => s.skin)
+    const allSkins = (c.skins || []).filter((s) => s && s.skin).map((s) => s.skin)
     const filler = Array.from({ length: 60 }, () =>
-      allSkins[Math.floor(Math.random() * allSkins.length)]
+      allSkins.length > 0 ? allSkins[Math.floor(Math.random() * allSkins.length)] : null
     )
     setRollItems(filler)
     setWinner(null)
@@ -91,9 +91,9 @@ export default function Cases() {
     setPhase('rolling')
 
     // Lentani yangilash
-    const allSkins = c.skins.map((s) => s.skin)
+    const allSkins = (c.skins || []).filter((s) => s && s.skin).map((s) => s.skin)
     const filler = Array.from({ length: 60 }, () =>
-      allSkins[Math.floor(Math.random() * allSkins.length)]
+      allSkins.length > 0 ? allSkins[Math.floor(Math.random() * allSkins.length)] : null
     )
     setRollItems(filler)
 
@@ -165,9 +165,9 @@ export default function Cases() {
             <div className="case-icon">📦</div>
             <h3>{c.caseName}</h3>
             <div className="case-odds">
-              {c.skins.slice(0, 4).map((s, i) => (
-                <span key={i} style={{ color: RARITY_LINE[s.skin.skinRarity] }}>
-                  {s.skin.skinName.split(' | ')[1] || s.skin.skinName} · {s.chance}%
+              {(c.skins || []).filter((s) => s && s.skin).slice(0, 4).map((s, i) => (
+                <span key={i} style={{ color: RARITY_LINE[s.skin?.skinRarity] || '#8b93a1' }}>
+                  {s.skin?.skinName?.split(' | ')[1] || s.skin?.skinName} · {s.chance}%
                 </span>
               ))}
               {c.skins.length > 4 && <span className="muted">+{c.skins.length - 4} ta yana...</span>}

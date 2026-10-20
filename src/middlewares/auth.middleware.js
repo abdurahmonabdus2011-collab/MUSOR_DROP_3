@@ -32,4 +32,22 @@ const authenticate = async (req, res, next) => {
     }
 };
 
-module.exports = { authenticate };
+// Ixtiyoriy auth: token bo'lsa req.user ni o'rnatadi, bo'lmasa xato bermaydi
+const optionalAuth = async (req, res, next) => {
+    try {
+        const authHeader = req.headers.authorization || '';
+        const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+        if (!token) return next();
+
+        const payload = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(payload.id);
+        if (user) {
+            req.user = user;
+        }
+    } catch (e) {
+        // xato bo'lsa shunchaki o'tkazib yuboramiz
+    }
+    next();
+};
+
+module.exports = { authenticate, optionalAuth };

@@ -5,6 +5,7 @@ import Skins from './pages/Skins'
 import Cases from './pages/Cases'
 import Inventory from './pages/Inventory'
 import Wallet from './pages/Wallet'
+import Market from './pages/Market'
 import About from './pages/About'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -27,6 +28,7 @@ function Layout() {
           <NavLink to="/cases">Keyslar</NavLink>
           {user && <NavLink to="/inventory">Inventar</NavLink>}
           {user && <NavLink to="/wallet">Wallet</NavLink>}
+          <NavLink to="/market">Dokon</NavLink>
           <NavLink to="/about">Loyiha haqida</NavLink>
           {user ? (
             <>
@@ -80,6 +82,7 @@ export default function App() {
         <Route path="/cases" element={<Cases />} />
         <Route path="/inventory" element={<Inventory />} />
         <Route path="/wallet" element={<Wallet />} />
+        <Route path="/market" element={<Market />} />
         <Route path="/about" element={<About />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />

@@ -20,8 +20,8 @@ const inventorySchema = new mongoose.Schema({
     status: {
         type: String,
         enum: {
-            values: ['owned', 'sold'],
-            message: 'Status faqat "owned" yoki "sold" bolishi mumkin'
+            values: ['owned', 'listed', 'sold'],
+            message: 'Status faqat "owned", "listed" yoki "sold" bolishi mumkin'
         },
         default: 'owned'
     },

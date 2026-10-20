@@ -56,7 +56,9 @@ exports.openCase = async (req, res) => {
         const c = await Case.findById(id).populate('skins.skin')
         if (!c) return res.status(404).json({ message: 'Keys topilmadi' })
         if (!c.isAvailable) return res.status(400).json({ message: 'Keys hozir mavjud emas' })
-        if (c.skins.length === 0) return res.status(400).json({ message: 'Keysda skinlar yoq' })
+        
+        const validSkins = (c.skins || []).filter(s => s && s.skin)
+        if (validSkins.length === 0) return res.status(400).json({ message: 'Keysda skinlar yoq' })
 
         const user = await User.findById(req.user._id)
         if (!user) return res.status(401).json({ message: 'Foydalanuvchi topilmadi' })
@@ -80,7 +82,7 @@ exports.openCase = async (req, res) => {
         }
 
         // 2) Chance boyicha skin tushirish
-        const won = pickSkinByChance(c.skins)
+        const won = pickSkinByChance(validSkins)
 
         // 3) Inventoryga yozish
         const invItem = await Inventory.create({

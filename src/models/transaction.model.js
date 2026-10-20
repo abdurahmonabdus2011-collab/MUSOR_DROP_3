@@ -10,7 +10,7 @@ const transactionSchema = new mongoose.Schema({
     type: {
         type: String,
         enum: {
-            values: ['deposit', 'case_open', 'skin_sale'],
+            values: ['deposit', 'case_open', 'skin_sale', 'market_buy', 'market_sale'],
             message: 'Type faqat deposit, case_open yoki skin_sale bolishi mumkin'
         },
         required: true

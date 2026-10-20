@@ -13,6 +13,7 @@ const authRouter = require('./routes/auth.routes')
 const casesRouter = require('./routes/cases.routes')
 const inventoryRouter = require('./routes/inventory.routes')
 const walletRouter = require('./routes/wallet.routes')
+const marketRouter = require('./routes/market.routes')
 
 const { authenticate } = require('./middlewares/auth.middleware')
 const { adminOnly } = require('./middlewares/admin.middleware')
@@ -99,6 +100,7 @@ app.get('/api/health', (req, res) => {
 // DB ulanmagan bo'lsa, API so'rovlarini aniq xabar bilan rad etish (jonsiz 500 o'rniga)
 app.use('/api', (req, res, next) => {
     if (req.path === '/health') return next() // health doim javob beradi
+    if (req.path === '/market') return next() // bozor (hamma uchun ochiq)
     if (mongoose.connection.readyState !== 1) {
         return res.status(503).json({
             message: 'MongoDB ulanmagan',
@@ -114,6 +116,7 @@ app.use('/api/auth', authRouter)
 app.use('/api/cases', casesRouter)
 app.use('/api/inventory', inventoryRouter)
 app.use('/api/wallet', walletRouter)
+app.use('/api/market', marketRouter)
 
 // API emas bo'lgan so'rovlarni React ilovasiga yunaltirish (SPA uchun)
 if (hasFrontend) {

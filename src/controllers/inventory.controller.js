@@ -7,7 +7,7 @@ const Transaction = require('../models/transaction.model')
 exports.getInventory = async (req, res) => {
     try {
         const filter = { user: req.user._id }
-        if (req.query.status === 'owned' || req.query.status === 'sold') {
+        if (['owned', 'sold', 'listed'].includes(req.query.status)) {
             filter.status = req.query.status
         }
 
@@ -35,6 +35,7 @@ exports.sellItem = async (req, res) => {
 
         const item = await Inventory.findById(id).populate('skin')
         if (!item) return res.status(404).json({ message: 'Item topilmadi' })
+        if (!item.skin) return res.status(400).json({ message: 'Skin ma\'lumoti topilmadi' })
 
         // Faqat o'z itemini sotish mumkin
         if (item.user.toString() !== req.user._id.toString()) {
@@ -45,12 +46,17 @@ exports.sellItem = async (req, res) => {
             return res.status(400).json({ message: 'Bu skin allaqachon sotilgan' })
         }
 
+        // Bozorda turgan itemni to'g'ridan-to'g'ri sotib yuborib bo'lmaydi — avval bekor qiling
+        if (item.status === 'listed') {
+            return res.status(400).json({ message: 'Bu skin bozorda turgan — avval bozordan olib tashlang' })
+        }
+
         // 1) status = sold
         item.status = 'sold'
         await item.save()
 
         // 2) wallet ga skinPrice qo'shish
-        const price = item.skin.skinPrice
+        const price = item.skin.skinPrice || 0
         const user = await User.findByIdAndUpdate(
             req.user._id,
             { $inc: { wallet: price } },

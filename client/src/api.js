@@ -69,4 +69,10 @@ export const api = {
   // ---- Inventory ----
   getInventory: (status) => request(`/inventory${status ? `?status=${status}` : ''}`),
   sellItem: (id) => request(`/inventory/${id}/sell`, { method: 'POST' }),
+
+  // ---- Market (bozor) ----
+  getMarket: (mine) => request(`/market${mine ? '?mine=1' : ''}`),
+  createListing: (body) => request('/market', { method: 'POST', body }),
+  buyListing: (id) => request(`/market/${id}/buy`, { method: 'POST' }),
+  cancelListing: (id) => request(`/market/${id}`, { method: 'DELETE' }),
 }
